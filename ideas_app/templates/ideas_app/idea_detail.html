@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Idea Detail - {{ detail.repo_idea.repo_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+            background-color: #f9fafb;
+            color: #333;
+        }
+        .container {
+            background: #fff;
+            padding: 2em;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: auto;
+        }
+        h1 {
+            color: #2F80ED;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 0.5em;
+            font-weight: 700;
+        }
+        h2 {
+            margin-top: 1.5em;
+            color: #555;
+            font-weight: 600;
+        }
+        pre {
+            background: #f4f6f8;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+        }
+        .score-section {
+            margin-top: 1.5em;
+            padding: 1em;
+            background: #eef6ff;
+            border-radius: 6px;
+            border: 1px solid #b3d4fc;
+            color: #1a3a85;
+            font-weight: 600;
+        }
+        .feedback-section {
+            margin-top: 1.5em;
+            background: #fff;
+            border-radius: 6px;
+            padding: 1em;
+            border: 1px solid #ccc;
+        }
+        .feedback-section h3 {
+            margin-top: 0;
+            font-weight: 700;
+            color: #333;
+        }
+        .feedback-section p {
+            margin: 0.5em 0 0;
+            font-style: italic;
+            color: #666;
+            white-space: pre-wrap;
+        }
+        .feedback-form {
+            margin-top: 2em;
+            border-top: 1px solid #ddd;
+            padding-top: 1.5em;
+        }
+        .feedback-form h3 {
+            font-weight: 700;
+            margin-bottom: 1em;
+            color: #2F80ED;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.4em;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="number"], textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin-bottom: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="number"]:focus, textarea:focus {
+            border-color: #2F80ED;
+            outline: none;
+        }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        button {
+            background-color: #2F80ED;
+            color: white;
+            padding: 0.6em 1.2em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        button:hover, button:focus {
+            background-color: #1c5fbf;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 2em;
+            text-decoration: none;
+            color: #2F80ED;
+            border: 1px solid #2F80ED;
+            padding: 0.5em 1em;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .back-link:hover, .back-link:focus {
+            background: #2F80ED;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Idea Detail for <em>{{ detail.repo_idea.repo_name }}</em></h1>
+
+        <h2>Selected Idea</h2>
+        <pre>{{ detail.idea_snippet }}</pre>
+
+        <h2>Deep Dive</h2>
+        {% if detail.deep_dive_info %}
+        <div class="deep-dive-section">{{ detail.deep_dive_info }}</div>
+        {% else %}
+        <pre>{{ detail.detailed_info }}</pre>
+        {% endif %}
+
+        <div class="score-section" role="region" aria-label="Idea scores">
+            <p><span>Groq Score:</span> {{ detail.groq_score|default:"N/A" }}</p>
+            <p><span>Your Score:</span> {{ detail.user_score|default:"N/A" }}</p>
+        </div>
+
+        <div class="feedback-section" role="region" aria-label="User feedback">
+            <h3>Your Feedback</h3>
+            <p>{{ detail.user_feedback|default:"No feedback yet." }}</p>
+        </div>
+
+        <section class="feedback-form" aria-labelledby="feedback-form-title">
+            <h3 id="feedback-form-title">Update Your Score & Feedback</h3>
+            <form method="post" action="{% url 'ideas_app:update_feedback' detail.id %}" novalidate>
+                {% csrf_token %}
+                <label for="user_score">Your Score (0-10):</label>
+                <input type="number" id="user_score" name="user_score" min="0" max="10" step="0.1" 
+                       value="{{ detail.user_score|default_if_none:'' }}" placeholder="Enter a score from 0 to 10" required aria-required="true" />
+                <label for="user_feedback">Your Feedback:</label>
+                <textarea id="user_feedback" name="user_feedback" rows="4" placeholder="Write your feedback here...">{{ detail.user_feedback|default_if_none:'' }}</textarea>
+                <button type="submit">Save Feedback</button>
+            </form>
+        </section>
+
+        <a href="{% url 'ideas_app:ideas_list' %}" class="back-link">← Back to Ideas List</a>
+    </div>
+</body>
+</html>

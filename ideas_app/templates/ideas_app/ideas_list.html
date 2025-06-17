@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trending Repo Creative Ideas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            margin: 2em;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: #fff;
+            padding: 2em;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2F80ED;
+            text-align: center;
+        }
+        .repo-block {
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #ddd;
+        }
+        .repo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .repo-header h2 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        .repo-date {
+            font-size: 0.9em;
+            color: #777;
+        }
+        .original-summary {
+            background: #eef6ff;
+            padding: 1em;
+            border-radius: 6px;
+            margin-bottom: 1em;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        li {
+            background: #f4f4f4;
+            padding: 0.5em;
+            margin-bottom: 0.5em;
+            border-radius: 4px;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+        .explore-button {
+            margin-top: 0.5em;
+            background: #2F80ED;
+            color: #fff;
+            border: none;
+            padding: 0.4em 0.8em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .explore-button:hover {
+            background: #1c5fbf;
+        }
+        .scores {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 0.3em;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 2em;
+            gap: 1em;
+        }
+        .pagination a, .pagination span {
+            color: #2F80ED;
+            text-decoration: none;
+            padding: 0.5em 0.75em;
+            border: 1px solid #2F80ED;
+            border-radius: 4px;
+            user-select: none;
+        }
+        .pagination a:hover {
+            background: #2F80ED;
+            color: #fff;
+        }
+        .pagination .current {
+            background: #2F80ED;
+            color: #fff;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trending Repo Creative Ideas</h1>
+        {% for idea in page_obj %}
+        <div class="repo-block">
+            <div class="repo-header">
+                <h2>{{ idea.repo_name }}</h2>
+                <div class="repo-date">{{ idea.created_at|date:"F j, Y, g:i a" }}</div>
+            </div>
+
+            <div class="original-summary">
+                <strong>Original Idea Summary:</strong>
+                <pre>{{ idea.summary }}</pre>
+                <div class="scores">
+                    Groq Score: {{ idea.groq_score|default:"N/A" }} | Your Score: {{ idea.user_score|default:"N/A" }}
+                </div>
+            </div>
+
+            <ul>
+                {% for detail in idea.idea_details.all %}
+                <li style="margin-bottom: 1.2em; background: #fafafa; padding: 1em; border-radius: 8px; border: 1px solid #ddd;">
+                    <pre style="font-size: 1em; color: #222; margin-bottom: 0.5em;">{{ detail.idea_snippet }}</pre>
+                    <div class="scores" style="font-size: 0.9em; color: #555; margin-bottom: 0.8em;">
+                        <strong>Groq Score:</strong> {{ detail.groq_score|default:"N/A" }} |
+                        <strong>Your Score:</strong> {{ detail.user_score|default:"N/A" }}
+                    </div>
+
+                    <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: center; margin-bottom: 0.5em;">
+                        <form action="{% url 'ideas_app:explore_idea' idea.id %}" method="post" style="flex-grow: 0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="snippet" value="{{ detail.idea_snippet }}">
+                            <button type="submit" class="explore-button" style="padding: 0.5em 1em; font-weight: 600;">
+                                Explore this idea
+                            </button>
+                        </form>
+
+                        <form action="{% url 'ideas_app:deep_dive_idea' detail.id %}" method="post" style="flex-grow: 0;">
+                            {% csrf_token %}
+                            <button type="submit" class="explore-button" style="background: #27ae60; padding: 0.5em 1em; font-weight: 600;">
+                                Deep Dive
+                            </button>
+                        </form>
+                    </div>
+
+                    {% if detail.deep_dive_info %}
+                    <div style="background: #f0f0f0; padding: 0.5em; border-radius: 6px; font-size: 0.9em; color: #333;">
+                        <strong>Deep Dive Result:</strong>
+                        <pre>{{ detail.deep_dive_info }}</pre>
+                    </div>
+                    {% endif %}
+
+                    <form action="{% url 'ideas_app:update_feedback' detail.id %}" method="post" style="margin-top: 0.5em;">
+                        {% csrf_token %}
+                        <label for="user_score_{{ detail.id }}" style="display: block; font-weight: 600; margin-bottom: 0.3em;">Your Score (0-10):</label>
+                        <input
+                            id="user_score_{{ detail.id }}"
+                            name="user_score"
+                            type="number"
+                            min="0" max="10" step="0.1"
+                            value="{{ detail.user_score|default_if_none:'' }}"
+                            placeholder="Score"
+                            style="width: 4.5em; margin-right: 1em; padding: 0.3em;"
+                        />
+
+                        <label for="user_feedback_{{ detail.id }}" style="display: block; font-weight: 600; margin: 0.5em 0 0.3em;">
+                            Your Feedback:
+                        </label>
+                        <textarea
+                            id="user_feedback_{{ detail.id }}"
+                            name="user_feedback"
+                            rows="2"
+                            placeholder="Your feedback"
+                            style="width: 100%; min-height: 3em; padding: 0.3em; resize: vertical;"
+                        >{{ detail.user_feedback|default_if_none:'' }}</textarea>
+
+                        <button type="submit" class="explore-button" style="margin-top: 0.5em; padding: 0.4em 1em;">
+                            Save Feedback
+                        </button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <p>No ideas yet. Run the generator!</p>
+        {% endfor %}
+
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
